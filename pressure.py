@@ -205,9 +205,9 @@ def generate_nth_fraction(radius, mass, z, cosmo=None, model = 'Green20'):
         nth_feedback = f0* (mass/M0)**(-alpha) * (1+z)**beta * (radius)**(ra)
         return nth + nth_feedback
         
-def pressure(radius, mass, r200m, z,  conc_model='diemer19', mass_def='vir', cosmo=None):
-    tot_pressure = rho_gas_unnorm(radius, mass, z, conc_model='diemer19', mass_def='vir')*\
-    sig2_tot(radius, mass, z, conc_model='diemer19', mass_def='vir')
-    fnth = generate_nth_fraction(radius/r200m, mass, z, cosmo = cosmo)
+def pressure(radius, mass, r200m, z,  conc_model='diemer19', mass_def='200m', cosmo=None, model = 'Green20'):
+    tot_pressure = rho_gas_unnorm(radius, mass, z, conc_model=conc_model, mass_def=mass_def)*\
+    sig2_tot(radius, mass, z, conc_model=conc_model, mass_def=mass_def)
+    fnth = generate_nth_fraction(radius/r200m, mass, z, cosmo = cosmo, model=model)
     return tot_pressure* (1-fnth)
     
