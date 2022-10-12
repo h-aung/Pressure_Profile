@@ -68,13 +68,6 @@ def rho_gas_unnorm(r, M, z, conc_model='diemer19', mass_def='vir'):
 
 # in km/s:
 
-
-def sig2_tot_obsolete(r, M, z, conc_model='diemer19', mass_def='vir'):
-    c = concentration.concentration(M, mass_def, z, model=conc_model)
-    R = mass_so.M_to_R(M, z, mass_def)
-    rho0_by_P0 = 3*eta0(c)**-1 * R/(G*M)
-    return (1.0 / rho0_by_P0) * theta(r, M, z, conc_model, mass_def)
-
 # the complete sig2_tot that only makes one of each relevant function call:
 
 
@@ -193,17 +186,7 @@ def gen_fnth_shi(Mobs, zobs, cosmo,  mass_def='vir', conc_model='duffy08', beta=
         return fnth, rads, sig2nth[-1, :], sig2tots[-1, :], data[:, 0], data[:, 2]
     
     
-def generate_nth_fraction(mass, radius, z, cosmo=None):
-    if hasattr(mass, '__len__') and (not isinstance(mass, str)):
-        if len(z)!=len(mass):
-            raise ValueError("Redshift and mass arrays must have same size.")
-        if len(masses)==1:
-            pass
-        else:
-            print("Proceeding with S14+KS01+NFW model. Nth fraction history integration with"+\
-                  "other density profiles is not supported for now.")
-            return gen_fnth_shi(mass, z, cosmo)
-    print("Using Green20 fitting function")
+def generate_nth_fraction(radius, mass, z, cosmo=None, model = 'Green20'):
     a, b, c, d, e, f = 0.495, 0.719, 1.417,-0.166, 0.265, -2.116
     if cosmo is None:
         print("No cosmology is set. Using Planck15 as default. Set cosmology with cosmology.setCosmology from colossus.")
@@ -211,15 +194,20 @@ def generate_nth_fraction(mass, radius, z, cosmo=None):
     
     nuv = mass/peaks.peakHeight(mass, z)
     nth = a*(1+np.exp(-(radius/b)**c))*(nuv/4.1)**(d/(1+(radius/e)**f))
-    return nth 
+    if model=='Green20':
+        return nth 
+    elif model=='Aung22_TNG':
+        f0 , M0, alpha, beta, ra = 0.0593, 1e14, 0.557, 0.448, 2.124
+        nth_feedback = f0* (mass/M0)**(-alpha) * (1+z)**beta * (radius)**(ra)
+        return nth + nth_feedback
+    elif model=='Aung22_MGT':
+        f0 , M0, alpha, beta, ra = 0.0421, 1e14, 0.514, 0.450, 2.236
+        nth_feedback = f0* (mass/M0)**(-alpha) * (1+z)**beta * (radius)**(ra)
+        return nth + nth_feedback
         
-def pressure(radius, mass, z, mass_profile=None, density_gas_profile=None):
-    if mass_profile is None:
-        print('   Adopting NFW profile')
-    if density_gas_profile is None:
-        print('   Adopting KS01 profile')
-        
-    if len(rho.shape)>1:
-        res = np.cumsum((-density_gas_profile*mass_profile/radius**2)*radius*np.log(radius[1]/radius[0]),axis=0)
-    else:
-        res = np.cumsum((-density_gas_profile*mass_profile/radius**2)*radius*np.log(radius[1]/radius[0]))
+def pressure(radius, mass, r200m, z,  conc_model='diemer19', mass_def='vir', cosmo=None):
+    tot_pressure = rho_gas_unnorm(radius, mass, z, conc_model='diemer19', mass_def='vir')*\
+    sig2_tot(radius, mass, z, conc_model='diemer19', mass_def='vir')
+    fnth = generate_nth_fraction(radius/r200m, mass, z, cosmo = cosmo)
+    return tot_pressure* (1-fnth)
+    
