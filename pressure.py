@@ -197,12 +197,14 @@ def generate_nth_fraction(radius, mass, z, cosmo=None, model = 'Green20'):
     if model=='Green20':
         return nth 
     elif model=='Aung22_TNG':
-        f0 , M0, alpha, beta, ra = 0.0593, 1e14, 0.557, 0.448, 2.124
-        nth_feedback = f0* (mass/M0)**(-alpha) * (1+z)**beta * (radius)**(ra)
+        f0 , M0, alpha, beta, ra = 0.0593, 1e14, 0.557, 0.148, 0.3013
+        nth_feedback = f0* ((10**mass)/M0)**(-alpha) * (1+z)**beta + ra*(-x*R500/R200m)
+        nth_feedback[nth_feedback<0] = 0
         return nth + nth_feedback
     elif model=='Aung22_MGT':
-        f0 , M0, alpha, beta, ra = 0.0421, 1e14, 0.514, 0.450, 2.236
-        nth_feedback = f0* (mass/M0)**(-alpha) * (1+z)**beta * (radius)**(ra)
+        f0 , M0, alpha, beta, ra = 0.0593, 1e14, 0.557, 0.148, 0.3013
+        nth_feedback = f0* ((10**mass)/M0)**(-alpha) * (1+z)**beta + ra*(-x*R500/R200m)
+        nth_feedback[nth_feedback<0] = 0
         return nth + nth_feedback
         
 def pressure(radius, mass, r200m, z,  conc_model='diemer19', mass_def='200m', cosmo=None, model = 'Green20'):
